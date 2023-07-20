@@ -21,10 +21,10 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Thumbprint', Justification = 'False positive as rule does not scan child scopes')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'Organization', Justification = 'False positive as rule does not scan child scopes')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'AppId', Justification = 'False positive as rule does not scan child scopes')]
-[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'ProductNames', Justification = 'False positive as rule does not scan child scopes')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'ProductName', Justification = 'False positive as rule does not scan child scopes')]
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'M365Environment', Justification = 'False positive as rule does not scan child scopes')]
 
-[CmdletBinding(DefaultParameterSetName='Manual')]
+[CmdletBinding(DefaultParameterSetName='Auto')]
 param (
     [Parameter(Mandatory = $true, ParameterSetName = 'Auto')]
     [ValidateNotNullOrEmpty()]
@@ -39,11 +39,11 @@ param (
     [string]
     $AppId,
     [Parameter(Mandatory = $true,  ParameterSetName = 'Auto')]
-    [Parameter(Mandatory = $false, ParameterSetName = 'Report')]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Report')]
     [ValidateNotNullOrEmpty()]
     [ValidateSet("teams", "exo", "defender", "aad", "powerplatform", "sharepoint", IgnoreCase = $false)]
-    [string[]]
-    $ProductNames = @("teams", "exo", "defender", "aad", "sharepoint"),
+    [string]
+    $ProductName,
     [Parameter(ParameterSetName = 'Auto')]
     [Parameter(ParameterSetName = 'Manual')]
     [Parameter(Mandatory = $false)]
@@ -56,24 +56,17 @@ $ScubaModulePath = Join-Path -Path $PSScriptRoot -ChildPath "../../../PowerShell
 Import-Module $ScubaModulePath
 Import-Module Selenium
 
-BeforeAll {
-    function GetProductTestPlan{
-        param(
-            [Parameter(Mandatory = $true)]
-            [ValidateNotNullOrEmpty()]
-            [ValidateSet("teams", "exo", "defender", "aad", "powerplatform", "sharepoint", IgnoreCase = $false)]
-            [string]
-            $ProductName
-        )
+BeforeDiscovery{
+    $TestPlanPath = Join-Path -Path $PSScriptRoot -ChildPath "TestPlans/$ProductName.testplan.yaml"
+    Test-Path -Path $TestPlanPath -PathType Leaf
 
-        $TestPlanPath = Join-Path -Path $PSScriptRoot -ChildPath "TestPlans/$ProductName.testplan.yaml"
-        Test-Path -Path $TestPlanPath -PathType Leaf
+    $YamlString = Get-Content -Path $TestPlanPath | Out-String
+    $ProductTestPlan = ConvertFrom-Yaml $YamlString
+    $TestPlan = $ProductTestPlan.TestPlan.ToArray()
+    $Tests = $TestPlan.Tests
+}
 
-        $YamlString = Get-Content -Path $TestPlanPath | Out-String
-        $TestPlan = ConvertFrom-Yaml $YamlString
-        $TestPlan
-    }
-
+BeforeAll{
     function SetConditions {
         param(
             [Parameter(Mandatory = $true)]
@@ -98,28 +91,56 @@ BeforeAll {
 
     function ExecuteScubagear() {
         # Execute ScubaGear to extract the config data and produce the output JSON
-        Invoke-SCuBA -productnames teams -Login $false -OutPath . -Quiet
+        Invoke-SCuBA -CertificateThumbPrint $Thumbprint -AppId $AppId -Organization $Organization -Productnames $ProductName -OutPath . -M365Environment $M365Environment -Quiet
+
     }
 
     function LoadSPOTenantData($OutputFolder) {
         $SPOTenant = Get-Content "$OutputFolder/TestResults.json" -Raw | ConvertFrom-Json
         $SPOTenant
     }
-}
 
-Describe "Policy Checks for <_>" -ForEach $ProductNames{
-    BeforeEach{
-        $ProductTestPlan = GetProductTestPlan -ProductName $_
-    }
-    Context "Start tests for <_>" {
-        It "Validate test plan for <_>" {
-            $ProductTestPlan.ProductName | Should -Be $_ 
-            $ProductTestPlan.ProductName | Should -Be $_
-            $ProductTestPlan.TestPlan.GetType() | Should -BeOfType System.Object[]
+    # Used to login to tenant first time
+    ExecuteScubagear
+}
+Describe "Policy Checks for <ProductName>"{
+    Context "Start tests for policy <PolicyId>" -ForEach $TestPlan{
+        Context "Execute test, <TestDescription>" -ForEach $Tests {
+            BeforeEach{
+                SetConditions -Conditions $Preconditions
+                ExecuteScubagear
+                $ReportFolders = Get-ChildItem . -directory -Filter "M365BaselineConformance*" | Sort-Object -Property LastWriteTime -Descending
+                $OutputFolder = $ReportFolders[0]
+                $SPOTenant = LoadSPOTenantData($OutputFolder)
+                # Search the results object for the specific requirement we are validating and ensure the results are what we expect
+                $PolicyResultObj = $SPOTenant | Where-Object { $_.PolicyId -eq $PolicyId }
+                $BaselineReports = Join-Path -Path $OutputFolder -ChildPath 'BaselineReports.html'
+                $script:url = (Get-Item $BaselineReports).FullName
+                $Driver = Start-SeChrome -Headless -Arguments @('start-maximized') 2>$null
+                Open-SeUrl $script:url -Driver $Driver 2>$null
+            }
+            It "Check intermediate results" {
+
+                $PolicyResultObj.RequirementMet | Should -Be $ExpectedResult
+
+                $Details = $PolicyResultObj.ReportDetails
+                $Details | Should -Not -BeNullOrEmpty -Because "expect detials, $Details"
+
+                if ($IsNotChecked){
+                    $Details | Should -Match 'Not currently checked automatically.'
+                }
+
+                if ($IsCustomImplementation){
+                    $Details | Should -Match 'Custom implementation allowed.'
+                }
+            }
+            It "Execute test" {
+                $_.Count | Should -BeGreaterThan 0
+            }
+            AfterEach {
+                SetConditions -Conditions $$_.Postconditions
+                #Stop-SeDriver -Driver $Driver 2>$null
+            }
         }
-    }
-    AfterEach {
-        #SetConditions -Conditions $Postconditions
-        #Stop-SeDriver -Driver $Driver 2>$null
     }
 }

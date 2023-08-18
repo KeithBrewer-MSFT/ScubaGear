@@ -965,6 +965,10 @@ function Invoke-Connection {
     }
 
     if ($LogIn) {
+        foreach($Key in $ConnectTenantParams.Keys){
+            Write-Verbose "Key: $Key; Value: $($ConnectTenantParams.Item($Key))"
+
+        }
         $AnyFailedAuth = Connect-Tenant @ConnectTenantParams
         $AnyFailedAuth
     }

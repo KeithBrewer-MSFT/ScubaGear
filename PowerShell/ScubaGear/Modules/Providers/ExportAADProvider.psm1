@@ -1,3 +1,10 @@
+$ScubaManifest = Import-PowerShellDataFile (Join-Path -Path $PSScriptRoot -ChildPath '../../../ScubaGear.psd1')
+$ScubaManifest.RequiredModules | ForEach-Object {
+    if ($_.ModuleName.StartsWith('Microsoft.Graph')){
+        Import-Module -Name $_.ModuleName -MinimumVersion $_.ModuleVersion.ToString() -MaximumVersion $_.MaximumVersion.ToString()
+    }
+}
+
 function Export-AADProvider {
     <#
     .Description
@@ -8,6 +15,7 @@ function Export-AADProvider {
     Internal
     #>
 
+    
     Import-Module $PSScriptRoot/ProviderHelpers/CommandTracker.psm1
     $Tracker = Get-CommandTracker
 
@@ -323,3 +331,10 @@ function Get-PrivilegedRole {
 
     $AADRoles
 }
+
+Export-ModuleMember -Function @(
+    'Export-AADProvider',
+    'Get-AADTenantDetail',
+    'Get-PrivilegedUser',
+    'Get-PrivilegedRole'
+)

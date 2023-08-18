@@ -1,6 +1,15 @@
 Import-Module -Name $PSScriptRoot/../ExportEXOProvider.psm1 -Function Get-ScubaSpfRecords, Get-ScubaDkimRecords, Get-ScubaDmarcRecords
 Import-Module -Name $PSScriptRoot/../ExportAADProvider.psm1 -Function Get-PrivilegedRole, Get-PrivilegedUser
 
+# Any module can be auto imported upon discovery here.  So we need to restrict to approved versions to support
+# Side-by-side powershell module installations.  
+$ScubaManifest = Import-PowerShellDataFile (Join-Path -Path $PSScriptRoot -ChildPath '../../../ScubaGear.psd1')
+$ScubaManifest.RequiredModules | ForEach-Object {
+    if ($_.ModuleName.StartsWith('Microsoft.Graph')){
+        Import-Module -Name $_.ModuleName -MinimumVersion $_.ModuleVersion.ToString() -MaximumVersion $_.MaximumVersion.ToString()
+    }
+}
+
 class CommandTracker {
     [string[]]$SuccessfulCommands = @()
     [string[]]$UnSuccessfulCommands = @()

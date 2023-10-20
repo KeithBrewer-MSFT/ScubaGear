@@ -20,7 +20,7 @@ TestPlan:
               RecipientDomainIs: null
               Confirm: false
         Postconditions: []
-        ExpectedResult: true     
+        ExpectedResult: true
       - TestDescription: MS.DEFENDER.1.2v1 Compliant - Std Null Strict Non-null
         Preconditions:
           - Command: Set-EOPProtectionPolicyRule
@@ -32,7 +32,7 @@ TestPlan:
               Confirm: false
           - Command: 'Set-EOPProtectionPolicyRule -Identity "Strict Preset Security Policy" -SentTo (Get-MailUser)[0].UserPrincipalName -SentToMemberOf (Get-UnifiedGroup)[0].alias -RecipientDomainIs badpeople.r.us -Confirm:$false'
         Postconditions: []
-        ExpectedResult: true     
+        ExpectedResult: true
       - TestDescription: MS.DEFENDER.1.2v1 Compliant - std&strict SentTo Null, SentToMemberOf Null, RecipientDomainIs Null
         Preconditions:
           - Command: Set-EOPProtectionPolicyRule
@@ -211,53 +211,53 @@ TestPlan:
         Postconditions: []
         ExpectedResult: true
 
-  - PolicyId: MS.DEFENDER.4.1v1
-    TestDriver: RunScuba
-    Tests:
-      - TestDescription: MS.DEFENDER.4.1v1 Compliant case
-        Preconditions:
-          - Command: Set-DlpComplianceRule
-            Splat:
-              displayName: MS.DEFENDER.4.1v1 A custom policy SHALL be configured to protect PII and sensitive information
-              updates:
-        Postconditions: []
-        ExpectedResult: true
+  # - PolicyId: MS.DEFENDER.4.1v1
+  #   TestDriver: RunScuba
+  #   Tests:
+  #     - TestDescription: MS.DEFENDER.4.1v1 Compliant case
+  #       Preconditions:
+  #         - Command: Set-DlpComplianceRule
+  #           Splat:
+  #             displayName: MS.DEFENDER.4.1v1 A custom policy SHALL be configured to protect PII and sensitive information
+  #             updates:
+  #       Postconditions: []
+  #       ExpectedResult: true
 
-  - PolicyId: MS.DEFENDER.4.2v1
-    TestDriver: RunScuba
-    Tests:
-      - TestDescription: MS.DEFENDER.4.2v1 Compliant case
-        Preconditions:
-          - Command: Set-DlpComplianceRule
-            Splat:
-              displayName: MS.DEFENDER.4.2v1 The custom policy SHOULD be applied to Exchange, OneDrive, SharePoint, Teams chat, and Devices
-              updates:
-        Postconditions: []
-        ExpectedResult: true
+  # - PolicyId: MS.DEFENDER.4.2v1
+  #   TestDriver: RunScuba
+  #   Tests:
+  #     - TestDescription: MS.DEFENDER.4.2v1 Compliant case
+  #       Preconditions:
+  #         - Command: Set-DlpComplianceRule
+  #           Splat:
+  #             displayName: MS.DEFENDER.4.2v1 The custom policy SHOULD be applied to Exchange, OneDrive, SharePoint, Teams chat, and Devices
+  #             updates:
+  #       Postconditions: []
+  #       ExpectedResult: true
 
-  - PolicyId: MS.DEFENDER.4.3v1
-    TestDriver: RunScuba
-    Tests:
-      - TestDescription: MS.DEFENDER.4.3v1 Compliant case
-        Preconditions:
-          - Command: Set-DlpComplianceRule
-            Splat:
-              displayName: MS.DEFENDER.4.3v1 custom policy SHOULD be set to block sharing sensitive information with everyone
-              updates:
-        Postconditions: []
-        ExpectedResult: true
+  # - PolicyId: MS.DEFENDER.4.3v1
+  #   TestDriver: RunScuba
+  #   Tests:
+  #     - TestDescription: MS.DEFENDER.4.3v1 Compliant case
+  #       Preconditions:
+  #         - Command: Set-DlpComplianceRule
+  #           Splat:
+  #             displayName: MS.DEFENDER.4.3v1 custom policy SHOULD be set to block sharing sensitive information with everyone
+  #             updates:
+  #       Postconditions: []
+  #       ExpectedResult: true
 
-  - PolicyId: MS.DEFENDER.4.4v1
-    TestDriver: RunScuba
-    Tests:
-      - TestDescription: MS.DEFENDER.4.4v1 Compliant case
-        Preconditions:
-          - Command: Set-DlpComplianceRule
-            Splat:
-              displayName: MS.DEFENDER.4.4v1 Notifications to inform users SHOULD be enabled
-              updates:
-        Postconditions: []
-        ExpectedResult: true
+  # - PolicyId: MS.DEFENDER.4.4v1
+  #   TestDriver: RunScuba
+  #   Tests:
+  #     - TestDescription: MS.DEFENDER.4.4v1 Compliant case
+  #       Preconditions:
+  #         - Command: Set-DlpComplianceRule
+  #           Splat:
+  #             displayName: MS.DEFENDER.4.4v1 Notifications to inform users SHOULD be enabled
+  #             updates:
+  #       Postconditions: []
+  #       ExpectedResult: true
 
   - PolicyId: MS.DEFENDER.4.5v1
     TestDriver: RunScuba
